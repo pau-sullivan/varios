@@ -1,0 +1,346 @@
+
+Declarar la app:
+-app.js
+	var app = angular.module('NombreApp', []);
+
+-index.html
+	<body ng-app="NombreApp">
+
+Controllers:
+-NombreController.js
+	app.controller('NombreController', ['$scope', function($scope) {
+  $scope.prop1 = new Date();
+
+  $scope.prop2 = [
+    {
+      data1: '',
+      data2: '',
+      data3: ''
+    }
+  ];
+
+}]);
+
+-index.html
+<div ng-controller="NombreController">
+	<h1>valor de prop1:{{prop1 | filter}}</h1>
+	<div ng-repeat="prop in prop2">
+		<h1>{{prop.data1}}</h1>
+		<h1>{{prop.data2}}</h1>
+		<h1>{{prop.data3}}</h1>
+	</div>
+</div>
+
+-------------------------------
+*Filters: number, currency, date
+*Imgs:<img ng-src="{{ data.url }}">
+*Llamar a funcion en controller:
+	Vista: ng-click="nombreFunc(valor)"
+	Controller: $scope.nombreFunc(parametro){};
+*Vista: indice actual dentro de ng-repeat=>$index
+-------------------------------
+
+Directives
+
+-appInfo.js (directive)
+app.directive('appInfo', function() { 
+  return { 
+    restrict: 'E', 	--means it will be used as a new HTML element.
+    scope: { 
+      info: '=' 		--specifies that we will pass information into this directive through an attribute named info.
+    }, 
+    templateUrl: 'js/directives/appInfo.html' 
+  }; 
+});
+
+The = tells the directive to look for an attribute named info in the <app-info> element, like this:
+<app-info info="shutterbugg"></app-info>
+The data in info becomes available to use in the template given by templateURL.
+
+-appInfo.html (template)
+<img class="icon" ng-src="{{ info.icon }}"> 
+<h2 class="title">{{ info.title }}</h2> 
+<p class="developer">{{ info.developer }}</p> 
+<p class="price">{{ info.price | currency }}</p>
+
+-index.html	(vista)
+<div class="main" ng-controller="MainController">
+	<div class="container">
+		<div class="card" ng-repeat="app in apps">
+			<app-info info="app"></app-info>
+		</div>    
+	</div>
+</div>
+
+----------------------------------------------------------------------------------------------------------------
+-->Ejemplo de directive con eventos
+link is used to create interactive directives that respond to user actions.
+
+-instalApp.js(directive)
+app.directive('installApp', function() { 
+  return { 
+    restrict: 'E', 
+    scope: { }, 
+    templateUrl: 'js/directives/installApp.html' ,
+    
+    link: function(scope, element, attrs) { 
+    	scope.buttonText = "Install", 
+    	scope.installed = false, 
+    	scope.download = function() { 
+      	element.toggleClass('btn-active'); 
+      	if(scope.installed) { 
+        	scope.buttonText = "Install"; 
+        	scope.installed = false; 
+      	} else { 
+        	scope.buttonText = "Uninstall"; 
+        	scope.installed = true; 
+      	} 
+} }};});
+
+The link function takes three inputs:
+1)scope refers to the directive's scope. Any new properties attached to $scope will become available to use in 
+	the directive's template.
+2)element refers to the directive's HTML element.
+3)attrs contains the element's attributes.
+
+-instalApp.html(template)
+<button class="btn btn-active" ng-click="download()"> 
+  {{ buttonText }} 
+</button>
+
+-index.html (vista)
+<install-app></install-app>
+
+----------------------------------------------------------------------------------------------------------------
+
+Services
+
+-js/services/nombreServicio.js
+app.factory('nombreServicio', ['$http', function($http) { 
+  return $http.get('https://s3.amazonaws.com/codecademy-content/courses/ltp4/forecast-api/forecast.json') 
+            .success(function(data) { 
+              return data; 
+            }) 
+            .error(function(err) { 
+              return err; 
+            }); 
+}]);
+
+-index.html
+  <script src="js/services/nombreServicio.js"></script>
+  
+-Controller
+app.controller('MainController', ['$scope', 'nombreServicio', function($scope, nombreServicio) { 
+  nombreServicio.success(function(data) {
+    $scope.parametro = data;
+  });
+}]);
+
+-En la vista (index.html) se usa igual
+<div ng-controller="MainController">
+	<p>{{parametro.prop1}}<p>
+</div>
+
+Routing
+
+-index.html: declarar seccion view
+<div ng-view></div>
+<script src="js/vendor/angular-route.min.js"></script>
+
+-app.js
+--inject ngRoute into the module's dependency array so that routing is available for the app to use:
+var app = angular.module('NombreApp', ['ngRoute']); 
+
+app.config(function ($routeProvider) { 
+  $routeProvider 
+    .when('/', { 
+      controller: 'HomeController', 
+      templateUrl: 'views/home.html' 
+    }) 
+		.when('/item/:id',{
+    	controller: 'ItemController',
+    	templateUrl: 'views/item.html'
+  	})
+    .otherwise({ 
+      redirectTo: '/' 
+    }); 
+});
+
+-ItemController.js
+app.controller('ItemController', ['$scope', 'items', '$routeParams', function($scope, items, $routeParams) {
+  items.success(function(data) {
+    $scope.detail = data[$routeParams.id];
+  });
+}]);
+
+-item.html (view)
+<div>{{detail.prop}}</div>
+
+-home.html
+ <div ng-repeat="item in items">
+        <a href="#/item/{{$index}}">
+          <img class="img-responsive" ng-src="{{ item.url }}">
+          <p>by {{ item.text }}</p>
+        </a>
+	</div>
+	
+	
+Bind 2 direcciones
+1)busqueda
+controller.js
+
+phonecatApp.controller('PhoneListCtrl', function($scope) {
+  $scope.phones = [
+    {'name': 'Nexus S',
+     'snippet': 'Fast just got faster with Nexus S.',
+     'age': 1},
+    {'name': 'Motorola XOOM™ with Wi-Fi',
+     'snippet': 'The Next, Next Generation tablet.',
+     'age': 2},
+    {'name': 'MOTOROLA XOOM™',
+     'snippet': 'The Next, Next Generation tablet.',
+     'age': 3}
+  ];
+});
+
+index.html
+<div ng-controller="PhoneListCtrl">
+	Search: <input ng-model="query">
+	<ul>
+		<li ng-repeat="phone in phones | filter:query">
+			<span>{{phone.name}}</span>
+		  <p>{{phone.snippet}}</p>
+		</li>
+	</ul>
+</div>
+
+2)Orderby
+controller:
+  $scope.phones = [
+    {'name': 'Nexus S',
+     'snippet': 'Fast just got faster with Nexus S.',
+     'age': 1},
+    {'name': 'Motorola XOOM™ with Wi-Fi',
+     'snippet': 'The Next, Next Generation tablet.',
+     'age': 2},
+    {'name': 'MOTOROLA XOOM™',
+     'snippet': 'The Next, Next Generation tablet.',
+     'age': 3}
+  ];
+
+  $scope.orderProp = 'age';
+
+index.html
+<div ng-controller="PhoneListCtrl">
+ Sort by:
+        <select ng-model="orderProp">
+          <option value="name">Alphabetical</option>
+          <option value="age">Newest</option>
+        </select>
+        
+        <ul>
+          <li ng-repeat="phone in phones | orderBy:orderProp">
+            <span>{{phone.name}}</span>
+            <p>{{phone.snippet}}</p>
+          </li>
+        </ul>
+</div>
+
+Sort + Order
+<ul class="phones">
+  <li ng-repeat="phone in phones | filter:query | orderBy:orderProp">
+    <span>{{phone.name}}</span>
+    <p>{{phone.snippet}}</p>
+  </li>
+</ul>
+
+Visualizar json
+index
+ <pre>{{phones | filter:query | orderBy:orderProp | json}}</pre> 
+ 
+ bind-template
+ <title ng-bind-template="Google Phone Gallery: {{query}}">Google Phone Gallery</title>
+ 
+ custom filters
+ app/js/filters.js:
+
+angular.module('phonecatFilters', []).filter('checkmark', function() {
+  return function(input) {
+    return input ? '\u2713' : '\u2718';
+  };
+});
+en la vista: | checkmark
+------------------------------------------------------------------------
+								REST and Custom Services (se reemplaza $htt por $resource))
+			-----------------------------------------------
+	<script src="bower_components/angular-resource/angular-resource.js"></script>
+  <script src="js/services.js"></script>
+-----------------------
+app/js/services.js
+---------------------
+var phonecatServices = angular.module('phonecatServices', ['ngResource']);
+
+phonecatServices.factory('Phone', ['$resource',
+  function($resource){
+    return $resource('phones/:phoneId.json', {}, {
+      query: {method:'GET', params:{phoneId:'phones'}, isArray:true}
+    });
+  }]);
+----------------------------------
+app/js/app.js (dependencies)
+----------------------------------
+angular.module('phonecatApp', ['ngRoute', 'phonecatControllers','phonecatFilters', 'phonecatServices']).
+
+----------------------------------
+app/js/controllers.js
+----------------------------------
+var phonecatControllers = angular.module('phonecatControllers', []);
+
+phonecatControllers.controller('PhoneListCtrl', ['$scope', 'Phone', function($scope, Phone) {
+  $scope.phones = Phone.query();
+  $scope.orderProp = 'age';
+}]);
+
+phonecatControllers.controller('PhoneDetailCtrl', ['$scope', '$routeParams', 'Phone', function($scope, $routeParams, Phone) {
+  $scope.phone = Phone.get({phoneId: $routeParams.phoneId}, function(phone) {
+    $scope.mainImageUrl = phone.images[0];
+  });
+
+  $scope.setImage = function(imageUrl) {
+    $scope.mainImageUrl = imageUrl;
+  }
+}]);
+
+
+
+--------------------------------------------------------------------------
+NODEJS
+------
+npm config get prefix -g
+npm config set prefix "${APPDATA}/npm" -g (<X>:\Users\<user>\AppData\Roaming\npm)
+npm config set prefix "${LOCALAPPDATA}/npm" -g
+
+npm cache clean
+--------------------------------
+
+npm install express --save
+npm install body-parser --save
+
+Tools
+1)npm install -g nodemon
+
+Now instead of using node server.js to run your application, you can use nodemon server.js. 
+It will watch for any changes in your application and automatically restart your server for you.
+
+2)npm install -g node-inspector
+node-debug server.js
+
+3)Postman
+Postman is a powerful HTTP client to help test web service
+
+
+usuarios
+----------------------------------
+npm install bcrypt-nodejs --save
+npm install passport --save
+npm install passport-http --save
